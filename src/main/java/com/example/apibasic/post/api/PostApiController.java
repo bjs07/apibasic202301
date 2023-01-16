@@ -5,10 +5,15 @@ import com.example.apibasic.post.dto.*;
 import com.example.apibasic.post.entity.PostEntity;
 
 import com.example.apibasic.post.service.PostService;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.Parameters;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -81,8 +86,23 @@ public class PostApiController {
     }
 
     // 게시물 등록
+    @Parameters({
+            @Parameter(name="작성자",description = "게시물 작성자를 입력",example = "김철수")
+            ,@Parameter(name="내용",description = "글 내용을 입력",example = "배고파요")
+    })
     @PostMapping
-    public ResponseEntity<?> create(@RequestBody PostCreateDTO createDTO) {
+    public ResponseEntity<?> create(@Validated @RequestBody PostCreateDTO createDTO,
+                                    BindingResult result // 검증에러 정보를 갖고 있는 객체
+    ) {
+        if (result.hasErrors()){
+            List<FieldError> fieldErrors = result.getFieldErrors();
+            fieldErrors.forEach(err->{
+                log.warn("invalidated client data", err.toString());
+            });
+            return ResponseEntity
+                    .badRequest()
+                    .body(fieldErrors);
+        }
         log.info("/posts POST request");
         log.info("게시물 정보: {}", createDTO);
 
